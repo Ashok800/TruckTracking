@@ -1,102 +1,90 @@
 package com.Hackthon.coderclan.Service;
 
+import com.Hackthon.coderclan.DTO.EmailTemplateDTO;
 import com.Hackthon.coderclan.Entity.EmailDetails;
+import com.Hackthon.coderclan.Repository.EmailRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import java.io.File;
-
 @Service
-// Class
-// Implementing EmailService interface
 public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private JavaMailSender javaMailSender;
 
+    private  EmailRepository emailRepository;
+
     @Value("${spring.mail.username}")
     private String sender;
 
-    public String sendSimpleMail(EmailDetails details) {
-        FileSystemResource file = new FileSystemResource(new File("C:/Users/Dilep/Downloads/alert imagi.png"));
+    public EmailServiceImpl(EmailRepository emailRepository) {
+        this.emailRepository = emailRepository;
+    }
+
+    public String sendSimpleMail(EmailTemplateDTO emailTemplateDTO) {
         try {
-            SimpleMailMessage mailMessage
-                    = new SimpleMailMessage();
+            SimpleMailMessage mailMessage = new SimpleMailMessage();
 
-            String bodyMessageInEmail=file+ "\n         tracking alert   \n"+
-                                "Truck is stated at: "+details.getSourceAddress()+
-                                "\n currently reached to:"+details.getTruckLocationReachedTo()+
-                                "\n and will need to deliver upto:"+details.getDeliverLocation()+
-                                "  and the time for reaching the destination location is :"+details.getTimeRemaining();
+            String bodyMessageInEmail = "\n Hi,\n\n" +
+                    "\n Please find the below tracking details. \n"+
+                    "Truck is stated at: " + emailTemplateDTO.getSource_address()+
+                    "\nTruck is  currently reached to:" + emailTemplateDTO.getTruckLocationReachedTo() +
+                    "\n Truck delivery location :" + emailTemplateDTO.getDelivery_location() +
+                    "\n\n\n\n"+
+                    "Thanks& Regards\n"+
+                    "Ttracking Team\n"+
+                    "\nNote:This is System Genereted Email PLease Do NOt Reply To This Mail";
 
-            // Setting up necessary details
+
             mailMessage.setFrom(sender);
-            mailMessage.setTo(details.getTo());
-//            mailMessage.setCc(details.getCc());
-//            mailMessage.getBcc(details.getBcc);
-
+            mailMessage.setTo(emailTemplateDTO.getWareHouse_email_id());
             mailMessage.setText(bodyMessageInEmail);
-            mailMessage.setSubject(details.getSubject());
+            mailMessage.setSubject("Track Trackiing Alert");
             javaMailSender.send(mailMessage);
-            return "Mail Sent Successfully to Mail id:"+details.getTo();
-        }
 
-        // Catch block to handle the exceptions
+            EmailDetails emailDetails=new EmailDetails();
+            emailDetails.setWareHouse_email_id(emailTemplateDTO.getWareHouse_email_id());
+            emailDetails.setSource_address(emailTemplateDTO.getSource_address());
+            emailDetails.setTruckLocationReachedTo(emailTemplateDTO.getTruckLocationReachedTo());
+            emailDetails.setDelivery_location(emailTemplateDTO.getDelivery_location());
+            emailDetails.setWareHouse_Contact_no(emailTemplateDTO.getWareHouse_Contact_no());
+            if(emailTemplateDTO.getTruckLocationReachedTo().equals(emailTemplateDTO.getDelivery_location())){
+                emailDetails.setLoadingStuatus("Deliverd");
+            }
+            else {
+                emailDetails.setLoadingStuatus("Yet to Deliver");
+            }
+            emailRepository.inserEmailDetails(emailDetails);
+            return "Mail Sent Successfully to Mail id:" + emailTemplateDTO.getWareHouse_email_id();
+        }
         catch (Exception e) {
             e.printStackTrace();
-            return "Error while Sending Mail"+e.getMessage();
+            return "Error while Sending Mail" + e.getMessage();
         }
     }
 
-    // Method 2
-    // To send an email with attachment
-    public String
-    sendMailWithAttachment(EmailDetails details)
-    {
-        // Creating a mime message
-        MimeMessage mimeMessage
-                = javaMailSender.createMimeMessage();
-        MimeMessageHelper mimeMessageHelper;
-
+    public Object getAllEmails() {
         try {
-
-            // Setting multipart as true for attachments to
-            // be send
-            mimeMessageHelper
-                    = new MimeMessageHelper(mimeMessage, true);
-            mimeMessageHelper.setFrom(sender);
-            mimeMessageHelper.setTo(details.getTo());
-//            mimeMessageHelper.setText(details.getMsgBody());
-            mimeMessageHelper.setSubject(
-                    details.getSubject());
-
-            // Adding the attachment
-            FileSystemResource file
-                    = new FileSystemResource(
-                    new File(details.getAttachment()));
-            FileSystemResource file1 = new FileSystemResource(new File("C:/Users/Dilep/Downloads/alert imagi.png"));
-
-
-            mimeMessageHelper.addAttachment(
-                    file.getFilename(), file);
-
-            // Sending the mail
-            javaMailSender.send(mimeMessage);
-            return "Mail sent Successfully";
+            return emailRepository.getAllEmailData();
+        }
+        catch (Exception e){
+            return "error while getting the documets :"+e.getMessage();
         }
 
-        // Catch block to handle MessagingException
-        catch (MessagingException e) {
 
-            // Display message when exception occurred
-            return "Error while sending mail!!!"+e.getMessage();
+    }
+
+    public Object getEmailById(String emailId) {
+        try{
+            return emailRepository.getEmailDataById(emailId);
+        }
+        catch (Exception e){
+            return "error while gettting the document:"+e.getMessage();
         }
     }
+
+
 }

@@ -1,27 +1,24 @@
 package com.Hackthon.coderclan.Entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 // Annotations
 @Data
-@AllArgsConstructor
+@Setter
+@Getter
 @NoArgsConstructor
-
-// Class
+@AllArgsConstructor
 public class EmailDetails {
 
-    // Class data members
-    private String  to;
-    private String cc;
-    private String subject;
-    private String attachment;
+    private  String email_id;
+    private String  wareHouse_email_id;
 
-    private String sourceAddress;
+    private String wareHouse_Contact_no;
+    private String source_address;
+    private String delivery_location;
     private String truckLocationReachedTo;
-    private String deliverLocation;
-    private String timeRemaining;
+    private  String loadingStuatus;
 }
